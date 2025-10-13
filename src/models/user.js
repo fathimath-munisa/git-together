@@ -1,4 +1,7 @@
 import mongoose from "mongoose";
+import validator from "validator.js";
+import jwt from "jsonwebtoken";
+
 
 const userSchema = new mongoose.Schema({
     firstName: {
@@ -17,20 +20,30 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true,
         lowecase: true,
-        trim: true
+        trim: true,
+        validate(value) {
+            if (!validator.isEmail(value)) {
+                throw new Error('Invalid email format');
+            }
+        }
     },
     password: {
         type: String,
-        required: true
+        required: true,
+        validate(value) {
+            if (!validator.isStrongPassword(value)) {
+                throw new Error('Password is not strong enough');
+            }
+        }
     },
     age: {
         type: Number,
         min: 16
     },
-    gender: { 
+    gender: {
         type: String,
         validate: {
-            validator: function(v) {
+            validator: function (v) {
                 return ['male', 'female', 'other'].includes(v);
             },
             message: props => `${props.value} is not a valid gender`
@@ -39,7 +52,12 @@ const userSchema = new mongoose.Schema({
     },
     photoUrl: {
         type: String,
-        default: "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
+        default: "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+        validate(value) {
+            if (!validator.isURL(value)) {
+                throw new Error('Invalid URL format');
+            }
+        }
     },
     default: {
         type: String,
@@ -49,6 +67,18 @@ const userSchema = new mongoose.Schema({
         type: [String]
     }
 }, { timestamps: true });
+
+userSchema.methods.getJWT = async function () {
+    const token =  await jwt.sign({ id: this._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    return token;
+}
+
+userSchema.methods.validatePassword = async function (password) {
+    const isValid = await bcrypt.compare(password, this.password);
+    return isValid;
+}
+
+
 
 const User = mongoose.model('User', userSchema);
 
