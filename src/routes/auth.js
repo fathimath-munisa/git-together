@@ -9,11 +9,14 @@ router.post('/signup', async (req, res) => {
         validateSignupData(req);
         const { firstName, lastName, email, password } = req.body;
         const passwordHash = await bcrypt.hash(password, 10);
-        const newUser = new User({ firstName, lastName, email, passwordHash });
+        const newUser = new User({ firstName, lastName, email, password: passwordHash });
 
         const savedUser = await newUser.save();
         const token  = savedUser.getJWT();
-        cons
+        res.cookie('token', token, {
+            expires: new Date(Date.now() + 8 * 3600000),
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === 'production' });
         res.send('User registered successfully');
     } catch (error) {
         console.log(error);
@@ -34,13 +37,17 @@ router.post('/login', async (req, res) => {
             return res.status(400).send('Invalid email or password');
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await user.validatePassword(password);
         if(!isMatch) {
             return res.status(400).send('Invalid email or password');
         }
 
-        const token = await jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
+        const token = await user.getJWT();
+        res.cookie('token', token, { 
+            expires: new Date(Date.now() + 8 * 3600000),
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === 'production'
+         });
         res.send('Login successful');
     } catch (error) {
         console.log(error);

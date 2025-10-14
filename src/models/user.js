@@ -42,11 +42,9 @@ const userSchema = new mongoose.Schema({
     },
     gender: {
         type: String,
-        validate: {
-            validator: function (v) {
-                return ['male', 'female', 'other'].includes(v);
-            },
-            message: props => `${props.value} is not a valid gender`
+        enum: {
+            values: ['male', 'female', 'other'],
+            message: '{VALUE} is not a valid gender'
         },
         required: true
     },
@@ -69,7 +67,7 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 userSchema.methods.getJWT = async function () {
-    const token =  await jwt.sign({ id: this._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token =  await jwt.sign({ id: this._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     return token;
 }
 
