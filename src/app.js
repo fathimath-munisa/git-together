@@ -8,18 +8,23 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
 import connectionsRoutes from './routes/connections.js';
-import feedRoutes from './routes/feed.js';
 import userRoutes from './routes/user.js';
+import cors from 'cors';
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+)
 
 app.use('/', authRoutes);
 app.use('/', profileRoutes);
 app.use('/', connectionsRoutes);
-app.use('/', feedRoutes);
 app.use('/', userRoutes);
 
 connectDB().then(() => {

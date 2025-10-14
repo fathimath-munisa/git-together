@@ -12,43 +12,44 @@ router.post('/signup', async (req, res) => {
         const newUser = new User({ firstName, lastName, email, password: passwordHash });
 
         const savedUser = await newUser.save();
-        const token  = savedUser.getJWT();
+        const token = savedUser.getJWT();
         res.cookie('token', token, {
             expires: new Date(Date.now() + 8 * 3600000),
-            httpOnly: true, 
-            secure: process.env.NODE_ENV === 'production' });
-        res.send('User registered successfully');
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production'
+        });
+        res.json({ message: 'User registered successfully', data: savedUser });
     } catch (error) {
         console.log(error);
         res.status(500).send('Error registering user', error.message);
     }
-    
+
 })
 
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    if(!email || !password) {
+    if (!email || !password) {
         return res.status(400).send('Email and password are required');
     }
 
     try {
         const user = await User.findOne({ email });
-        if(!user) {
+        if (!user) {
             return res.status(400).send('Invalid email or password');
         }
 
         const isMatch = await user.validatePassword(password);
-        if(!isMatch) {
+        if (!isMatch) {
             return res.status(400).send('Invalid email or password');
         }
 
         const token = await user.getJWT();
-        res.cookie('token', token, { 
+        res.cookie('token', token, {
             expires: new Date(Date.now() + 8 * 3600000),
-            httpOnly: true, 
+            httpOnly: true,
             secure: process.env.NODE_ENV === 'production'
-         });
-        res.send('Login successful');
+        });
+        res.json({ message: 'Login successful', data: user });
     } catch (error) {
         console.log(error);
         res.status(500).send('Server error');
